@@ -12,7 +12,7 @@ def api():
     response = requests.get(
         'https://hacker-news.firebaseio.com/v0/topstories.json?print=pretty')
     response_parsed = response.json()
-    response_sliced = response_parsed[slice(0, 3)]
+    response_sliced = response_parsed[slice(0, 10)]
     # print(response_sliced)
     response_data = []
     for news in range(len(response_sliced)):
