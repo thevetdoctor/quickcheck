@@ -128,8 +128,8 @@ def my_scheduled_job():
 
 
 if __name__ == "__main__":
+    # with app.app_context():
+    # current_app.config["ENV"]
     db.create_all()
-    with app.app_context():
-        current_app.config["ENV"]
-        sched.start()
+    sched.start()
     app.run()
