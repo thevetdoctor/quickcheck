@@ -26,14 +26,16 @@ class News(db.Model):
     type = db.Column(db.String(20), nullable=False)
     time = db.Column(db.Integer, nullable=False)
     url = db.Column(db.String(250), nullable=True)
+    kids = db.Column(db.String)
     by = db.Column(db.String(30), nullable=False)
 
-    def __init__(self, item_id, title, type, time, url, by):
+    def __init__(self, item_id, title, type, time, url, kids, by):
         self.item_id = item_id
         self.title = title
         self.type = type
         self.time = time
         self.url = url
+        self.kids = kids
         self.by = by
 
 
@@ -47,6 +49,7 @@ def get_news():
             "type": new.type,
             "time": new.time,
             "url": new.url,
+            "kids": new.kids,
             "by": new.by
         } for new in res
     ]
@@ -83,16 +86,10 @@ def api():
             'https://hacker-news.firebaseio.com/v0/item/' + str(response_trimmed[news]) + '.json')
         news_req = news_data.json()
         # print(news_req)
-        if(hasattr(news_req, "url")):
-            data = News(news_req["id"], news_req["title"], news_req["type"],
-                        news_req["time"], news_req["url"], news_req["by"])
-            db.session.add(data)
-            db.session.commit()
-        else:
-            data = News(news_req["id"], news_req["title"], news_req["type"],
-                        news_req["time"], "", news_req["by"])
-            db.session.add(data)
-            db.session.commit()
+        data = News(news_req.get("id"), news_req.get("title"), news_req.get("type"),
+                    news_req.get("time"), news_req.get("url"), news_req.get("kids"), news_req.get("by"))
+        db.session.add(data)
+        db.session.commit()
 
         response_data.append(news_req)
     return jsonify({"count": len(response_data), "api": response_data})
