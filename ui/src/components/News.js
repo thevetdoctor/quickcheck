@@ -1,33 +1,62 @@
 /* eslint-disable no-unused-vars */
+/* eslint-disable react/jsx-no-target-blank */
 /* eslint-disable react-hooks/exhaustive-deps */
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { FaInternetExplorer, FaUserAlt, FaUserSecret } from 'react-icons/fa';
-import { HiSpeakerphone } from 'react-icons/hi';
-import data from './sampleData.json';
+import { FaInternetExplorer } from 'react-icons/fa';
+import { BsPersonFill } from 'react-icons/bs';
+import { GiNewspaper } from 'react-icons/gi';
+import { AiOutlineNumber } from 'react-icons/ai';
+import { IoTrailSignSharp } from 'react-icons/io5';
+import Moment from 'react-moment';
 import Select from './inputs/Select';
 import Input from './inputs/Input';
+import Pagination from './Pagination';
+import loader from './media/loading.svg';
+import store from '../redux/store';
+import { useSelector } from 'react-redux';
+import './Loader.css';
 
 export default function News({baseUrl}) {
-    const [status, setStatus] = useState(true);
-    const [news, setNews] = useState([...data]);
-    const [newsType, setNewsType] = useState('');
-    const [searchQuery, setSearchQuery] = useState('');
+    const [loading, setLoading] = useState(false);
     
+    const {getState, dispatch} = store;
+    const state = getState();
+    const { news, newsType, page, pageSize, totalPages, searchQuery, networkStatus } = useSelector(state => state);
+    console.log(state);
+
     const handleInputChange = (e) => {
         const target = e.target;
         const name = target.name;
         const value = target.value;
-    
+        setLoading(true);
         console.log(name, value);
+        
         if(name === 'search-query') {
-            setSearchQuery(value)
+            dispatch({
+                type: 'SET_SEARCH_QUERY',
+                data: value
+            }); 
         } else {
-            setNewsType(value);
+            dispatch({
+                type: 'SET_NEWS_TYPE',
+                data: value
+            });
         }
+        setLoading(false);
       }
 
-    console.log(news);
+      
+    const handlePageClick = (direction) => {
+        let nextPage = page;
+        nextPage = direction === 'next' ? nextPage + 1 : nextPage - 1;
+        console.log(direction);
+        dispatch({
+            type: 'SET_PAGE',
+            data: nextPage
+        });
+    }
+
     const getNews = async() => {
         const res = await axios({
             method: 'GET',
@@ -39,24 +68,32 @@ export default function News({baseUrl}) {
         .catch(err => console.log(err.message));
 
         if(res?.data) {
-            setStatus(false);
-            setNews(res.data.news);
+            dispatch({
+                type: 'SET_NETWORK_STATUS',
+                data: true
+            });
+            dispatch({
+                type: 'SET_NEWS',
+                data: res.data.news
+            });
         } else {
-            // setNews(data);
-            setStatus(true);
+            dispatch({
+                type: 'SET_NETWORK_STATUS',
+                data: false
+            });
         }
     }
 
     useEffect(() => {
-        // getNews();
+        getNews();
         
         return () => {}
     }, []);
 
     return (
         <div>
-            {status && <div style={{backgroundColor: 'white', fontWeight: 'bold'}} className='text-red-500 text-bold py-2 m-2 rounded'>Please check your network !</div>}
-            {status && <div style={{backgroundColor: 'white', fontWeight: 'bold'}} className='text-bold mx-2 rounded flex justify-between'>
+            {!networkStatus && <div style={{backgroundColor: 'white', fontWeight: 'bold'}} className='text-red-500 text-bold py-2 m-1 rounded'>Please check your network !</div>}
+            <div style={{backgroundColor: 'white', fontWeight: 'bold'}} className='text-bold mx-1 rounded flex justify-between'>
                 <Select 
                     name='news-type'
                     value={newsType}
@@ -70,12 +107,30 @@ export default function News({baseUrl}) {
                     placeholder='Search By Text'
                     handleChange={handleInputChange}
                 /> 
-            </div>}
-            {'!single' &&
-            <>{news?.filter(type => type.type === newsType).map((singleNews, idx) => {
-                return <SingleNews key={idx} singleNews={singleNews}  />
-            })}
-            </>} 
+            </div>
+            <div className='flex flex-col md:flex-row md:flex-wrap md:justify-around'>
+                {!loading ?
+                <>{news.slice((page - 1) * pageSize, (pageSize * page)).sort((a, b) => b.time - a.time)
+                    .map((singleNews, idx) => {
+                        return <SingleNews key={idx} singleNews={singleNews}  />
+                    })}
+                </>
+                :
+                <div className='loader-div'>
+                    <div>
+                        <img className='loader' src={loader} alt='loader' />
+                    </div>
+                </div>}
+            </div>
+
+            {news.length > 0 ?
+            <Pagination
+                totalPages={totalPages}
+                page={page}
+                handlePageClick={handlePageClick}
+            />
+            :
+            <div className='mt-2 border-2 border-green-200 rounded font-bold text-white'>No data</div>}
         </div>
     )
 }
@@ -83,22 +138,26 @@ export default function News({baseUrl}) {
 
 const SingleNews = ({singleNews }) => {
     const { id, title, type, time, url, kids, by } = singleNews;
+    // console.log(new Date(time).toUTCString(), time, JSON.parse(kids))
     return (
-    <div style={{backgroundColor: 'white'}} className='bg-blue-200 p-2 border-blue-200 border-2 rounded m-1 flex flex-col'>
-        {'!single' &&
-        <p className=' text-left flex flex-col'>
-            <span className='flex'><FaUserSecret /><span className='ml-2'>{id}</span> </span>
-            <span className='flex'><FaUserSecret /><span className='ml-2'>{title}</span> </span>
-            <span className='flex'> <FaUserAlt /> <span className='ml-2'>{type}</span></span>
-            <span className='flex'> <FaInternetExplorer /> <span className='ml-2'>{time}</span></span>
-            <span className='flex'> <HiSpeakerphone /> <span className='ml-2'>{url}</span></span>
-            <span className='flex'> Albums: <span className='ml-2'>{kids}</span></span>
-            <span className='flex'> Albums: <span className='ml-2'>{by}</span></span>
-        </p>}
-        <p className='mt-3 mb-2'>
-            <span className='bg-blue-600 p-2 text-white mr-2 rounded cursor-pointer hover:bg-blue-400 hover:text-black'>{'single' ? 'Go Back' : 'View More'}</span>
-            <span className='bg-green-600 p-2 text-white rounded cursor-pointer hover:bg-green-400 hover:text-black'> View </span>
+    <div style={{backgroundColor: 'white'}} className='md:w-2/5 bg-blue-200 p-2 border-blue-200 border-2 rounded m-1 flex flex-col'>
+        <p className='text-md text-left flex flex-col'>
+            <span className='flex'>
+                <span className='ml-2 mb-2'>
+                    <Moment fromNow>{new Date(time).toUTCString()}</Moment>
+                </span>
+            </span>
+            <span className='flex'><AiOutlineNumber size={22} /><span className='ml-2'>{id}</span> </span>
+            {title && <span className='flex'><IoTrailSignSharp size={22} /><span className='ml-2'>{title}</span> </span>}
+            <span className='flex'> <GiNewspaper size={22} /> <span className='ml-2'>{type}</span></span>
+            {url && <span className='flex'> <FaInternetExplorer size={22} /> <span className='ml-2 text-blue-600 hover:text-purple-600'><a href={url} target='_blank'>{url}</a></span></span>}
+            {/* {kids && <span className='flex'> Kids: <span className='ml-2'>{kids}</span></span>} */}
+            <span className='flex'> <BsPersonFill size={22}/> <span className='ml-2'>{by ? by : 'unknown'}</span></span>
         </p>
+        {/* <p className='mt-3 mb-2'> */}
+            {/* <span className='bg-blue-600 p-2 text-white mr-2 rounded cursor-pointer hover:bg-blue-400 hover:text-black'>{'single' ? 'Go Back' : 'View More'}</span>
+            <span className='bg-green-600 p-2 text-white rounded cursor-pointer hover:bg-green-400 hover:text-black'> View </span> */}
+        {/* </p> */}
     </div>
     )
 }

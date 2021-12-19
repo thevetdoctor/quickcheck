@@ -4,12 +4,17 @@ import News from './components/News';
 
 function App() {
   const baseUrl = 'http://localhost:5000';
-
+  if (navigator.onLine) {
+    console.log('online');
+  } else {
+    console.log('offline');
+  }
   return (
-        <div className="p-5 text-center bg-gradient-to-r from-cyan-500 to-blue-700 h-full bg-cover">
+        <div className="p-5 text-center bg-gradient-to-r from-cyan-500 to-green-500 h-full bg-cover">
           <h2 style={{fontFamily: 'Architects Daughter'}} className="text-3xl font-bold my-3 text-white">
             QuickCheck
           </h2>
+          
           <News baseUrl={baseUrl} />
         </div>
   );

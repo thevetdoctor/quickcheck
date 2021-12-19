@@ -1,0 +1,20 @@
+.loader {
+  animation: loader-spin infinite 1s linear;
+  height: 15vmin;
+  pointer-events: none;
+}
+
+@keyframes loader-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.loader-div {
+  display: flex;
+  margin: 40%;
+  color: #fff;
+}

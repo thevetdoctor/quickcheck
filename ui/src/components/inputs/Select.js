@@ -2,16 +2,6 @@
 import React from 'react';
 
 export default function Select(props) {
-    // const [{ stateData }, dispatch] = useCozaState();
-
-    // const handleInputChange = (e) => {
-    //     const target = e.target;
-    //     const name = target.name;
-    //     const value = target.value;
-    
-    //     console.log(name, value);
-     
-    //   } 
 
     return (
         <div className=''>
