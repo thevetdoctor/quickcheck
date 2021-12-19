@@ -11,7 +11,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-app = Flask(__name__, static_folder='./build', static_url_path='/')
+app = Flask(__name__, static_folder='./ui/build', static_url_path='/')
 
 # setup databse configuration
 app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get('DB_URI')
