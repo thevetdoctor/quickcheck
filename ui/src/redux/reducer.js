@@ -12,7 +12,6 @@ export default function reducer(state= initialState, action) {
         case actions.setNewsType.type:
             console.log('Setting News Type');
             const newsByType = state.newsData.filter(type => (type.type === action.data));
-            console.log(newsByType, action.data, state.newsData);
 
             return {
               ...state,

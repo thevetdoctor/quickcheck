@@ -23,7 +23,7 @@ export default function News({baseUrl}) {
     const {getState, dispatch} = store;
     const state = getState();
     const { news, newsType, page, pageSize, totalPages, searchQuery, networkStatus } = useSelector(state => state);
-    console.log(state);
+    // console.log(state);
 
     const handleInputChange = (e) => {
         const target = e.target;
@@ -83,7 +83,6 @@ export default function News({baseUrl}) {
             });
         }
     }
-
     useEffect(() => {
         getNews();
         
@@ -91,9 +90,9 @@ export default function News({baseUrl}) {
     }, []);
 
     return (
-        <div>
+        <div className='md:w-1/2 justify-center m-auto'>
             {!networkStatus && <div style={{backgroundColor: 'white', fontWeight: 'bold'}} className='text-red-500 text-bold py-2 m-1 rounded'>Please check your network !</div>}
-            <div style={{backgroundColor: 'white', fontWeight: 'bold'}} className='text-bold mx-1 rounded flex justify-between'>
+            <div style={{backgroundColor: 'white', fontWeight: 'bold'}} className='text-bold mx-1 rounded flex justify-evenly'>
                 <Select 
                     name='news-type'
                     value={newsType}
@@ -108,7 +107,7 @@ export default function News({baseUrl}) {
                     handleChange={handleInputChange}
                 /> 
             </div>
-            <div className='flex flex-col md:flex-row md:flex-wrap md:justify-around'>
+            <div className='flex flex-col md:justify-around'>
                 {!loading ?
                 <>{news.slice((page - 1) * pageSize, (pageSize * page)).sort((a, b) => b.time - a.time)
                     .map((singleNews, idx) => {
@@ -130,7 +129,11 @@ export default function News({baseUrl}) {
                 handlePageClick={handlePageClick}
             />
             :
-            <div className='mt-2 border-2 border-green-200 rounded font-bold text-white'>No data</div>}
+            <div>
+                <div className='mt-2 border-2 border-green-200 rounded font-bold text-white'>No data</div>
+                {(news.slice((page - 1) * pageSize, (pageSize * page)).length < 4) && 
+                <div style={{height: '80vh'}} className='mt-2 text-white'></div>}
+            </div>}
         </div>
     )
 }
@@ -140,7 +143,7 @@ const SingleNews = ({singleNews }) => {
     const { id, title, type, time, url, kids, by } = singleNews;
     // console.log(new Date(time).toUTCString(), time, JSON.parse(kids))
     return (
-    <div style={{backgroundColor: 'white'}} className='md:w-2/5 bg-blue-200 p-2 border-blue-200 border-2 rounded m-1 flex flex-col'>
+    <div style={{backgroundColor: 'white'}} className='bg-blue-200 p-2 border-blue-200 border-2 rounded m-1 flex flex-col'>
         <p className='text-md text-left flex flex-col'>
             <span className='flex'>
                 <span className='ml-2 mb-2'>
