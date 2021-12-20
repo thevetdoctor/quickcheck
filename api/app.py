@@ -1,6 +1,7 @@
-from flask import Flask, jsonify, request, current_app
-from flask_cors import CORS
-from flask_sqlalchemy import SQLAlchemy
+# from flask import Flask, jsonify, request, current_app
+# from flask_cors import CORS
+# from flask_sqlalchemy import SQLAlchemy
+from app import app
 from flask_migrate import Migrate
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.executors.pool import ThreadPoolExecutor, ProcessPoolExecutor
@@ -12,7 +13,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-app = Flask(__name__, static_folder='./ui/build', static_url_path='/')
+# app = Flask(__name__, static_folder='./ui/build', static_url_path='/')
 
 # setup databse configuration
 app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get('DB_URI')
@@ -21,7 +22,7 @@ app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {"pool_pre_ping": True}
 app.secret_key = os.environ.get('SECRET_URL')
 
 CORS(app)
-db.init_app(app)
+# db.init_app(app)
 migrate = Migrate(app, db)
 
 

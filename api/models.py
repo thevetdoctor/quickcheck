@@ -1,7 +1,4 @@
-from flask import Flask, jsonify, request, current_app
-from flask_sqlalchemy import SQLAlchemy
-
-db = SQLAlchemy()
+from app import db
 
 
 class News(db.Model):
