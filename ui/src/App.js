@@ -10,7 +10,7 @@ function App() {
     console.log('offline');
   }
   return (
-        <div className="p-5 text-center bg-gradient-to-r from-cyan-500 to-green-500 h-full bg-cover">
+        <div className="p-5 text-center bg-gradient-to-r from-cyan-500 to-green-500 h-full bg-cover w-screen">
           <h2 style={{fontFamily: 'Architects Daughter'}} className="text-3xl font-bold my-3 text-white">
             QuickCheck
           </h2>

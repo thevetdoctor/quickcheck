@@ -147,7 +147,7 @@ const SingleNews = ({singleNews }) => {
         <p className='text-md text-left flex flex-col'>
             <span className='flex'>
                 <span className='ml-2 mb-2'>
-                    <Moment fromNow>{new Date(time).toUTCString()}</Moment>
+                    <Moment>{new Date(time * 1000)}</Moment>
                 </span>
             </span>
             <span className='flex'><AiOutlineNumber size={22} /><span className='ml-2'>{id}</span> </span>

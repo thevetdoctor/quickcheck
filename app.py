@@ -33,14 +33,11 @@ class News(db.Model):
     time = db.Column(db.Integer, nullable=False)
     url = db.Column(db.String(250), nullable=True)
     by = db.Column(db.String(50), nullable=True)
+    source = db.Column(db.String(50), default='hackernews')
 
-    # kids = db.relationship('Comments', backref='news', lazy=True)
-    # comment_id = db.Column(db.Integer, db.ForeignKey(
-    #     'comments.id'), default=1)
-    # comment = db.relationship(
-    #     'Comments', backref=db.backref('news', lazy=True))
+    # kids = db.relationship('Comments', backref='news', lazy='joined')
 
-    def __init__(self, item_id, title, type, text, time, url, by):
+    def __init__(self, item_id, title, type, text, time, url, by, source='hackernews'):
         self.item_id = item_id
         self.title = title
         self.type = type
@@ -48,6 +45,7 @@ class News(db.Model):
         self.time = time
         self.url = url
         self.by = by
+        self.source = source
 
 
 class Comments(db.Model):
@@ -59,18 +57,18 @@ class Comments(db.Model):
     time = db.Column(db.Integer, nullable=False)
     url = db.Column(db.String(250), nullable=True)
     by = db.Column(db.String(50), nullable=True)
+    source = db.Column(db.String(50), default='hackernews')
 
     parent = db.Column(db.Integer, db.ForeignKey(
         'news.item_id'), nullable=False)
-    news = db.relationship('News', backref=db.backref('comments', lazy=True))
+    parents = db.relationship('News', lazy='joined', innerjoin=True)
 
-    # parentz = db.Column(db.Integer, db.ForeignKey(
-    #     'comments.item_id'), nullable=False)
-    # comments = db.relationship(
-    #     # 'Comments', backref=db.backref('comments', lazy=True))
-    #     'Comments', remote_side=[item_id])
+    parentz = db.Column(db.Integer, db.ForeignKey(
+        'comments.item_id'), nullable=True)
+    kids = db.relationship(
+        'Comments', remote_side=[item_id])
 
-    def __init__(self, item_id, title, type, text, time, url, by):
+    def __init__(self, item_id, title, type, text, time, url, by, source='hackernews'):
         self.item_id = item_id
         self.title = title
         self.type = type
@@ -78,10 +76,13 @@ class Comments(db.Model):
         self.time = time
         self.url = url
         self.by = by
+        self.source = source
 
 
 @app.route("/get_news", methods=["GET"])
 def get_news():
+    print('Calling /get_news')
+
     query_params_type = request.args.get("type")
     query_params_text = request.args.get("text")
     if(query_params_type):
@@ -90,7 +91,9 @@ def get_news():
         res = db.session.query(News).filter(
             News.text.like(f"%{query_params_text}%"))
     else:
-        res = db.session.query(Comments).all()
+        res = db.session.query(News).all()
+        res_comments = db.session.query(Comments).all()
+
     news = [
         {
             "id": new.item_id,
@@ -102,6 +105,18 @@ def get_news():
             "by": new.by
         } for new in res
     ]
+    comments = [
+        {
+            "id": new.item_id,
+            "title": new.title,
+            "type": new.type,
+            "text": new.text,
+            "time": new.time,
+            "url": new.url,
+            "by": new.by
+        } for new in res_comments
+    ]
+    # news = news + comments
     return jsonify({"message": "cached news retrieved", "count": len(news), "news": news})
 
 
@@ -112,7 +127,7 @@ executors = {
 sched = BackgroundScheduler(timezone='Asia/Seoul', executors=executors)
 
 
-@ app.route("/apis", methods=["GET", "POST"])
+@ app.route("/apis", methods=["GET"])
 def apis():
     print('Calling /apis')
     response = requests.get(
@@ -152,9 +167,27 @@ def apis():
                     'https://hacker-news.firebaseio.com/v0/item/' + str(news_req.get('kids')[kid]) + '.json')
                 kid_req = kid_data.json()
                 print('kid req', kid_req.get('type'))
+                # create_comment =
                 create_comment = Comments(kid_req.get("id"), kid_req.get("title"), kid_req.get("type"), kid_req.get("text"),
                                           kid_req.get("time"), kid_req.get("url"), kid_req.get("by"))
-                create_news.comments.append(create_comment)
+# , parent=news_req.get("id")
+                create_news.kids.append(create_comment)
+
+                if kid_req is not None and kid_req.get("kids"):
+                    print(kid_req.get("comment kids"),
+                          len(kid_req.get('kids')))
+                    for kid in range(len(kid_req.get('kids'))):
+                        comment_kid_data = requests.get(
+                            'https://hacker-news.firebaseio.com/v0/item/' + str(kid_req.get('kids')[kid]) + '.json')
+                        comment_kid_req = comment_kid_data.json()
+                        print('comment kid req', comment_kid_req.get('type'))
+                        # create_kid_comment =
+                        create_kid_comment = Comments(comment_kid_req.get("id"), comment_kid_req.get("title"), comment_kid_req.get("type"), kid_req.get(
+                            "text"), comment_kid_req.get("time"), comment_kid_req.get("url"), comment_kid_req.get("by"))
+                        create_comment.kids.append(create_kid_comment)
+
+                        db.session.add(create_news)
+
                 news_req['kids'].append(kid_req)
                 db.session.add(create_news)
         db.session.commit()
@@ -198,10 +231,38 @@ def api():
     return jsonify({"message": "fresh news retrieved", "count": len(response_data), "news": response_data})
 
 
+@ app.route("/api/news", methods=["POST"])
+def add_news():
+    print('Creating a fresh News article')
+    req = request.json
+    print(req)
+
+    data = News(req.get("id"), req.get("title"), req.get("type"), req.get("text"),
+                req.get("time"), req.get("url"), req.get("by"))
+    db.session.add(data)
+    db.session.commit()
+
+    print(data)
+    val = db.session.query(News).all()
+    print(val)
+    news = [
+        {
+            "id": new.item_id,
+            "title": new.title,
+            "type": new.type,
+            "text": new.text,
+            "time": new.time,
+            "url": new.url,
+            "by": new.by
+        } for new in val
+    ]
+    return json.dumps({"message": "fresh news added", "news": news})
+
+
 sched.add_job(api, 'interval', seconds=300)
 
 
-@app.route("/clear")
+@ app.route("/clear")
 def clear_db():
     d = db.drop_all()
     e = db.create_all()

@@ -24,28 +24,28 @@ export default function reducer(state= initialState, action) {
                 page: action.data
             }                   
             case actions.setTotalPages.type:
-                console.log('Setting totalPages');
+            console.log('Setting totalPages');
+            return {
+                ...state,
+                totalPages: action.data
+            }                   
+            case actions.setSearchQuery.type:
+                console.log('Setting Search Query');
+                const newsBySearch = state.newsData.filter(item => (item?.text?.indexOf(action.data) >= 0) && (item.type === state.newsType));
+                
                 return {
                     ...state,
-                    totalPages: action.data
+                    searchQuery: action.data, news: newsBySearch, page: 1, totalPages: Math.ceil(newsBySearch.length / state.pageSize)
                 }                   
-                case actions.setSearchQuery.type:
-                    console.log('Setting Search Query');
-                    const newsBySearch = state.newsData.filter(item => (item?.text?.indexOf(action.data) >= 0) && (item.type === state.newsType));
-                    
-                    return {
-                        ...state,
-                        searchQuery: action.data, news: newsBySearch, page: 1, totalPages: Math.ceil(newsBySearch.length / state.pageSize)
-                    }                   
-                case actions.setNetworkStatus.type:
-                    console.log('Setting Network Status');
-                    
-                    return {
-                        ...state,
-                        networkStatus: action.data
-                    }                   
-                    default:
-                        return state;
+            case actions.setNetworkStatus.type:
+                console.log('Setting Network Status');
+                
+            return {
+                ...state,
+                networkStatus: action.data
+            }                   
+            default:
+                return state;
     }
 };
  
