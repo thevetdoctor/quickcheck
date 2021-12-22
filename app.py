@@ -1,6 +1,6 @@
 from flask import Flask, jsonify, request, current_app
 from flask_cors import CORS
-# from flask_sqlalchemy import SQLAlchemy
+from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.executors.pool import ThreadPoolExecutor, ProcessPoolExecutor
@@ -8,12 +8,11 @@ import requests
 import json
 import os
 from dotenv import load_dotenv
-from .models import News, Comments
-from . import db
+# from models import News, Comment, db
 
 load_dotenv()
 
-app = Flask(__name__, static_folder='../ui/build', static_url_path='/')
+app = Flask(__name__, static_folder='./ui/build', static_url_path='/')
 
 # setup database configuration
 app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get('DB_URI')
@@ -21,66 +20,66 @@ app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {"pool_pre_ping": True}
 app.secret_key = os.environ.get('SECRET_URL')
 
-print(os.environ.get('SECRET_URL'))
+print(os.environ)
 
 CORS(app)
-db.init_app(app)
+db = SQLAlchemy(app)
 migrate = Migrate(app, db)
 
 
-# class News(db.Model):
-#     id = db.Column(db.Integer, primary_key=True)
-#     item_id = db.Column(db.Integer, unique=True, nullable=False)
-#     title = db.Column(db.String, nullable=True)
-#     type = db.Column(db.String(20), nullable=False)
-#     text = db.Column(db.String, nullable=True)
-#     time = db.Column(db.Integer, nullable=False)
-#     url = db.Column(db.String(250), nullable=True)
-#     by = db.Column(db.String(50), nullable=True)
-#     source = db.Column(db.String(50), default='hackernews')
+class News(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    item_id = db.Column(db.Integer, unique=True, nullable=False)
+    title = db.Column(db.String, nullable=True)
+    type = db.Column(db.String(20), nullable=False)
+    text = db.Column(db.String, nullable=True)
+    time = db.Column(db.Integer, nullable=False)
+    url = db.Column(db.String(250), nullable=True)
+    by = db.Column(db.String(50), nullable=True)
+    source = db.Column(db.String(50), default='hackernews')
 
-#     # kids = db.relationship('Comments', backref='news', lazy='joined')
+    # kids = db.relationship('Comments', backref='news', lazy='joined')
 
-#     def __init__(self, item_id, title, type, text, time, url, by, source='hackernews'):
-#         self.item_id = item_id
-#         self.title = title
-#         self.type = type
-#         self.text = text
-#         self.time = time
-#         self.url = url
-#         self.by = by
-#         self.source = source
+    def __init__(self, item_id, title, type, text, time, url, by, source='hackernews'):
+        self.item_id = item_id
+        self.title = title
+        self.type = type
+        self.text = text
+        self.time = time
+        self.url = url
+        self.by = by
+        self.source = source
 
 
-# class Comments(db.Model):
-#     id = db.Column(db.Integer, primary_key=True)
-#     item_id = db.Column(db.Integer, unique=True, nullable=False)
-#     title = db.Column(db.String, nullable=True)
-#     type = db.Column(db.String(20), nullable=False)
-#     text = db.Column(db.String, nullable=True)
-#     time = db.Column(db.Integer, nullable=False)
-#     url = db.Column(db.String(250), nullable=True)
-#     by = db.Column(db.String(50), nullable=True)
-#     source = db.Column(db.String(50), default='hackernews')
+class Comments(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    item_id = db.Column(db.Integer, unique=True, nullable=False)
+    title = db.Column(db.String, nullable=True)
+    type = db.Column(db.String(20), nullable=False)
+    text = db.Column(db.String, nullable=True)
+    time = db.Column(db.Integer, nullable=False)
+    url = db.Column(db.String(250), nullable=True)
+    by = db.Column(db.String(50), nullable=True)
+    source = db.Column(db.String(50), default='hackernews')
 
-#     parent = db.Column(db.Integer, db.ForeignKey(
-#         'news.item_id'), nullable=False)
-#     parents = db.relationship('News', lazy='joined', innerjoin=True)
+    parent = db.Column(db.Integer, db.ForeignKey(
+        'news.item_id'), nullable=False)
+    parents = db.relationship('News', lazy='joined', innerjoin=True)
 
-#     parentz = db.Column(db.Integer, db.ForeignKey(
-#         'comments.item_id'), nullable=True)
-#     kids = db.relationship(
-#         'Comments', remote_side=[item_id])
+    parentz = db.Column(db.Integer, db.ForeignKey(
+        'comments.item_id'), nullable=True)
+    kids = db.relationship(
+        'Comments', remote_side=[item_id])
 
-#     def __init__(self, item_id, title, type, text, time, url, by, source='hackernews'):
-#         self.item_id = item_id
-#         self.title = title
-#         self.type = type
-#         self.text = text
-#         self.time = time
-#         self.url = url
-#         self.by = by
-#         self.source = source
+    def __init__(self, item_id, title, type, text, time, url, by, source='hackernews'):
+        self.item_id = item_id
+        self.title = title
+        self.type = type
+        self.text = text
+        self.time = time
+        self.url = url
+        self.by = by
+        self.source = source
 
 
 @app.route("/get_news", methods=["GET"])
@@ -250,7 +249,7 @@ def add_news():
     return json.dumps({"message": "fresh news added", "news": news})
 
 
-sched.add_job(api, 'interval', seconds=5)
+sched.add_job(api, 'interval', seconds=6)
 
 
 @ app.route("/clear")
@@ -262,16 +261,19 @@ def clear_db():
 
 @ app.route("/")
 def index():
+    # return app.send_static_file('index.html')
 
-    # with app.app_context():
-    #     current_app.config["ENV"]
-    #     sched.start()
-    #     print('check')
-    #     return app
-    return app.send_static_file('index.html')
+    with app.app_context():
+        current_app.config["ENV"]
+        sched.start()
+        print('quick')
+        return app
 
 
 if __name__ == "__main__":
     db.create_all()
-    print('app start')
-    app.run()
+    print('quick')
+    app.run(
+        host='0.0.0.0',
+        port=5000,
+    )
