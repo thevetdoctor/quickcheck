@@ -7,7 +7,7 @@ export default function reducer(state= initialState, action) {
             console.log('Setting News data');
             return {
               ...state,
-              news: action.data
+              news: action.data, newsData: action.data, newsType: 'Filter By Type', page: 1, totalPages: Math.ceil(action.data.length / state.pageSize)
             }          
         case actions.setNewsType.type:
             console.log('Setting News Type');
@@ -31,8 +31,13 @@ export default function reducer(state= initialState, action) {
             }                   
             case actions.setSearchQuery.type:
                 console.log('Setting Search Query');
-                const newsBySearch = state.newsData.filter(item => (item?.text?.indexOf(action.data) >= 0) && (item.type === state.newsType));
-                
+                let newsBySearch;
+                if(state.newsType === 'Filter By Type') {
+                    newsBySearch = state.newsData.filter(item => (item?.text?.toLowerCase().indexOf(action.data.toLowerCase()) >= 0));
+                } else {
+                    newsBySearch = state.newsData.filter(item => (item?.text?.toLowerCase().indexOf(action.data.toLowerCase()) >= 0) && (item.type === state.newsType));
+                }
+                    
                 return {
                     ...state,
                     searchQuery: action.data, news: newsBySearch, page: 1, totalPages: Math.ceil(newsBySearch.length / state.pageSize)
@@ -50,8 +55,8 @@ export default function reducer(state= initialState, action) {
 };
  
 export const initialState = {
-    newsData: [...data],
-    news: [...data],
+    newsData: [],
+    news: [],
     newsType: 'Filter By Type',
     page: 1,
     pageSize: 10,

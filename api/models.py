@@ -10,11 +10,11 @@ class News(db.Model):
     time = db.Column(db.Integer, nullable=False)
     url = db.Column(db.String(250), nullable=True)
     by = db.Column(db.String(50), nullable=True)
-    source = db.Column(db.String(50), default='hackernews')
+    source = db.Column(db.String(50), nullable=False)
 
     # kids = db.relationship('Comments', backref='news', lazy='joined')
 
-    def __init__(self, item_id, title, type, text, time, url, by, source='hackernews'):
+    def __init__(self, item_id, title, type, text, time, url, by, source):
         self.item_id = item_id
         self.title = title
         self.type = type
@@ -34,7 +34,7 @@ class Comments(db.Model):
     time = db.Column(db.Integer, nullable=False)
     url = db.Column(db.String(250), nullable=True)
     by = db.Column(db.String(50), nullable=True)
-    source = db.Column(db.String(50), default='hackernews')
+    source = db.Column(db.String(50), nullable=False)
 
     parent = db.Column(db.Integer, db.ForeignKey(
         'news.item_id'), nullable=False)
@@ -45,7 +45,7 @@ class Comments(db.Model):
     kids = db.relationship(
         'Comments', remote_side=[item_id])
 
-    def __init__(self, item_id, title, type, text, time, url, by, source='hackernews'):
+    def __init__(self, item_id, title, type, text, time, url, by, source, parent, parentz):
         self.item_id = item_id
         self.title = title
         self.type = type
@@ -54,3 +54,5 @@ class Comments(db.Model):
         self.url = url
         self.by = by
         self.source = source
+        self.parent = parent
+        self.parentz = parentz

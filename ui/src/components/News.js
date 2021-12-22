@@ -90,7 +90,7 @@ export default function News({baseUrl}) {
     }, []);
 
     return (
-        <div className='md:w-1/2 justify-center m-auto'>
+        <div className='md:w-1/2 justify-center m-auto w-full'>
             {!networkStatus && <div style={{backgroundColor: 'white', fontWeight: 'bold'}} className='text-red-500 text-bold py-2 m-1 rounded'>Please check your network !</div>}
             <div style={{backgroundColor: 'white', fontWeight: 'bold'}} className='text-bold mx-1 rounded flex justify-evenly'>
                 <Select 
@@ -140,7 +140,7 @@ export default function News({baseUrl}) {
 
 
 const SingleNews = ({singleNews }) => {
-    const { id, title, type, time, url, kids, by } = singleNews;
+    const { id, title, type, text, time, url, by } = singleNews;
     // console.log(new Date(time).toUTCString(), time, JSON.parse(kids))
     return (
     <div style={{backgroundColor: 'white'}} className='bg-blue-200 p-2 border-blue-200 border-2 rounded m-1 flex flex-col'>
@@ -153,7 +153,8 @@ const SingleNews = ({singleNews }) => {
             <span className='flex'><AiOutlineNumber size={22} /><span className='ml-2'>{id}</span> </span>
             {title && <span className='flex'><IoTrailSignSharp size={22} /><span className='ml-2'>{title}</span> </span>}
             <span className='flex'> <GiNewspaper size={22} /> <span className='ml-2'>{type}</span></span>
-            {url && <span className='flex'> <FaInternetExplorer size={22} /> <span className='ml-2 text-blue-600 hover:text-purple-600'><a href={url} target='_blank'>{url}</a></span></span>}
+            {text && <span className='flex'> <GiNewspaper size={22} /> <span className='ml-2'>{text}</span></span>}
+            {url && <span className='flex'> <FaInternetExplorer size={22} /> <span className='ml-2 text-blue-600 hover:text-purple-600 overflow-auto'><a href={url} target='_blank'>{url}</a></span></span>}
             {/* {kids && <span className='flex'> Kids: <span className='ml-2'>{kids}</span></span>} */}
             <span className='flex'> <BsPersonFill size={22}/> <span className='ml-2'>{by ? by : 'unknown'}</span></span>
         </p>
