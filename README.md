@@ -6,16 +6,19 @@ https://github.com/thevetdoctor/quickcheck
 
 ## Installation
 
+```
 Navigate into the root directory
 RUN source venv/Scripts/activate (on Windows, use the equivalent command on a Mac)
 RUN pip install -r requirements.txt
 RUN flask run
 
+```
+
 ## API
 
 Available endpoints:
 
-# BaseUrl : http://localhost:5000
+BaseUrl : http://localhost:5000
 
 GET ${rootUrl}apis/:
 
