@@ -8,6 +8,7 @@ https://github.com/thevetdoctor/quickcheck
 
 ```
 Navigate into the root directory
+RUN virtualenv venv
 RUN source venv/Scripts/activate (on Windows, use the equivalent command on a Mac)
 RUN pip install -r requirements.txt
 RUN flask run

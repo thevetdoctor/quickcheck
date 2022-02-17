@@ -242,7 +242,7 @@ export default function News({baseUrl}) {
             </div>
             <div className='flex flex-col md:justify-around'>
                 {!loading ?
-                <>{news.slice((page - 1) * pageSize, (pageSize * page)).filter(item => item.id !== 123).sort((a, b) => - a.time + b.time)
+                <>{news.filter(item => item.id !== 123).sort((a, b) => - a.time + b.time).slice((page - 1) * pageSize, (pageSize * page))
                     .map((singleNews, idx) => {
                         return <SingleNews key={idx} singleNews={singleNews} baseUrl={baseUrl} apiCallHook={apiCallHook} />
                     })}

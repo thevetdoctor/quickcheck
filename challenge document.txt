@@ -1,0 +1,16 @@
+# quickcheck
+
+
+
+A simple flask app built for Hacker News API
+
+https://github.com/thevetdoctor/quickcheck
+
+Kindly find the directory on this google drive link, all attempt to get a zip size for the folder to below 10854kb proved futile.
+
+https://drive.google.com/drive/folders/1xdZu0HBVZ48a28vkp1dg1O4Hcf6gVjTq?usp=sharing
+
+
+Thank you for your indulgence.
+
+Obafemi

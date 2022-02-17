@@ -1,8 +1,8 @@
 from flask import Flask, jsonify, request, current_app
 from flask_cors import CORS
 from flask_migrate import Migrate
-from apscheduler.schedulers.background import BackgroundScheduler
-from apscheduler.executors.pool import ThreadPoolExecutor, ProcessPoolExecutor
+# from apscheduler.schedulers.background import BackgroundScheduler
+# from apscheduler.executors.pool import ThreadPoolExecutor, ProcessPoolExecutor
 import requests
 import json
 import os
@@ -11,7 +11,7 @@ from dotenv import load_dotenv
 from .models import News, Comments
 from . import db
 import datetime
-
+import time
 load_dotenv()
 
 app = Flask(__name__, static_folder='../ui/build', static_url_path='/')
@@ -26,11 +26,23 @@ CORS(app)
 db.init_app(app)
 migrate = Migrate(app, db)
 
-executors = {
-    'default': ThreadPoolExecutor(16),
-    'processpool': ProcessPoolExecutor(4)
-}
-sched = BackgroundScheduler(timezone='Asia/Seoul', executors=executors)
+# executors = {
+# 'default': ThreadPoolExecutor(16),
+# 'processpool': ProcessPoolExecutor(4)
+# }
+# sched = BackgroundScheduler(timezone='Asia/Seoul', executors=executors)
+
+active = False
+
+
+@app.route("/check/<active>")
+def check(active):
+    if active is True:
+        print("checking", active)
+        time.sleep(30)
+        # return {"message": "checking time"}
+    active = True
+    apis(active)
 
 
 @app.route("/get_news", methods=["GET"])
@@ -101,78 +113,87 @@ def seed_db():
     return
 
 
-@ app.route("/apis", methods=["GET"])
-def apis():
-    print('Calling /apis')
-    seed = db.session.query(Comments).filter_by(parentz=123).all()
-    if(len(seed) < 1):
-        seed_db()
-
-    response = requests.get(
-        'https://hacker-news.firebaseio.com/v0/newstories.json?print=pretty')
-    response_parsed = response.json()
-    response_sliced = response_parsed[slice(0, 50)]
-
-    req = db.session.query(News.item_id)
-    res = req.all()
-    res_parsed = []
-    for s in res:
-        for t in s:
-            res_parsed.append(t)
-    response_trimmed = []
-    for r in response_sliced:
+@ app.route("/apis/<active>", methods=["GET"])
+def apis(active):
+    while active is True:
+        print('Calling /apis')
         try:
-            if(res_parsed.index(r) >= 0):
-                u = res_parsed.index(r)
+            seed = db.session.query(Comments).filter_by(parentz=123).all()
+            if(len(seed) < 1):
+                seed_db()
+
+            response = requests.get(
+                'https://hacker-news.firebaseio.com/v0/newstories.json?print=pretty')
+            response_parsed = response.json()
+            response_sliced = response_parsed[slice(0, 50)]
+
+            req = db.session.query(News.item_id)
+            res = req.all()
+            res_parsed = []
+            for s in res:
+                for t in s:
+                    res_parsed.append(t)
+            response_trimmed = []
+            for r in response_sliced:
+                try:
+                    if(res_parsed.index(r) >= 0):
+                        u = res_parsed.index(r)
+                except:
+                    response_trimmed.append(r)
+
+            result = []
+            print(response_trimmed)
+            for news in range(len(response_trimmed)):
+                news_data = requests.get(
+                    'https://hacker-news.firebaseio.com/v0/item/' + str(response_trimmed[news]) + '.json')
+                news_req = news_data.json()
+
+                if news_req is not None:
+                    create_news = News(news_req.get("id"), news_req.get("title"), news_req.get("type"), news_req.get("text"),
+                                       news_req.get("time"), news_req.get("url"), news_req.get("by"), 'hackernews')
+
+                    if news_req.get("descendants"):
+                        print('Descendants', news_req.get("descendants"))
+                    if news_req.get("kids"):
+                        print(news_req.get("kids"), len(news_req.get('kids')))
+                        for kid in range(len(news_req.get('kids'))):
+                            kid_data = requests.get(
+                                'https://hacker-news.firebaseio.com/v0/item/' + str(news_req.get('kids')[kid]) + '.json')
+                            kid_req = kid_data.json()
+                            print('kid req', kid_req.get('type'))
+                            # create_comment =
+                            create_comment = Comments(kid_req.get("id"), kid_req.get("title"), kid_req.get("type"), kid_req.get("text"),
+                                                      kid_req.get("time"), kid_req.get("url"), kid_req.get("by"), 'hackernews', news_req.get("id"), int(123))
+
+                            # create_news.kids.append(create_comment)
+
+                            if kid_req is not None and kid_req.get("kids"):
+                                print(kid_req.get("comment kids"),
+                                      len(kid_req.get('kids')))
+                                for kid in range(len(kid_req.get('kids'))):
+                                    comment_kid_data = requests.get(
+                                        'https://hacker-news.firebaseio.com/v0/item/' + str(kid_req.get('kids')[kid]) + '.json')
+                                    comment_kid_req = comment_kid_data.json()
+                                    print('comment kid req',
+                                          comment_kid_req.get('type'))
+
+                                    create_kid_comment = Comments(comment_kid_req.get("id"), comment_kid_req.get("title"), comment_kid_req.get("type"), comment_kid_req.get(
+                                        "text"), comment_kid_req.get("time"), comment_kid_req.get("url"), comment_kid_req.get("by"), 'hackernews', int(123),  kid_req.get("id"))
+
+                                    db.session.add(create_kid_comment)
+                            db.session.add(create_comment)
+                    db.session.add(create_news)
+                    db.session.commit()
+
+                result.append(news_req)
+            # return jsonify({"message": "fresh news synced", "count": len(result), "news": result})
+            print("checking apis", active)
+            time.sleep(300)
         except:
-            response_trimmed.append(r)
-
-    result = []
-    print(response_trimmed)
-    for news in range(len(response_trimmed)):
-        news_data = requests.get(
-            'https://hacker-news.firebaseio.com/v0/item/' + str(response_trimmed[news]) + '.json')
-        news_req = news_data.json()
-
-        if news_req is not None:
-            create_news = News(news_req.get("id"), news_req.get("title"), news_req.get("type"), news_req.get("text"),
-                               news_req.get("time"), news_req.get("url"), news_req.get("by"), 'hackernews')
-
-            if news_req.get("descendants"):
-                print('Descendants', news_req.get("descendants"))
-            if news_req.get("kids"):
-                print(news_req.get("kids"), len(news_req.get('kids')))
-                for kid in range(len(news_req.get('kids'))):
-                    kid_data = requests.get(
-                        'https://hacker-news.firebaseio.com/v0/item/' + str(news_req.get('kids')[kid]) + '.json')
-                    kid_req = kid_data.json()
-                    print('kid req', kid_req.get('type'))
-                    # create_comment =
-                    create_comment = Comments(kid_req.get("id"), kid_req.get("title"), kid_req.get("type"), kid_req.get("text"),
-                                              kid_req.get("time"), kid_req.get("url"), kid_req.get("by"), 'hackernews', news_req.get("id"), int(123))
-
-                    # create_news.kids.append(create_comment)
-
-                    if kid_req is not None and kid_req.get("kids"):
-                        print(kid_req.get("comment kids"),
-                              len(kid_req.get('kids')))
-                        for kid in range(len(kid_req.get('kids'))):
-                            comment_kid_data = requests.get(
-                                'https://hacker-news.firebaseio.com/v0/item/' + str(kid_req.get('kids')[kid]) + '.json')
-                            comment_kid_req = comment_kid_data.json()
-                            print('comment kid req',
-                                  comment_kid_req.get('type'))
-
-                            create_kid_comment = Comments(comment_kid_req.get("id"), comment_kid_req.get("title"), comment_kid_req.get("type"), comment_kid_req.get(
-                                "text"), comment_kid_req.get("time"), comment_kid_req.get("url"), comment_kid_req.get("by"), 'hackernews', int(123),  kid_req.get("id"))
-
-                            db.session.add(create_kid_comment)
-                    db.session.add(create_comment)
-            db.session.add(create_news)
-            db.session.commit()
-
-        result.append(news_req)
-    return jsonify({"message": "fresh news synced", "count": len(result), "news": result})
+            print('exception thrown')
+            time.sleep(10)
+        else:
+            print('no exception thrown')
 
 
 @ app.route("/api/news", methods=["POST"])
@@ -271,7 +292,7 @@ def update_news(id):
         return jsonify({"message": "Item with ID: deleted"})
 
 
-sched.add_job(apis, 'interval', seconds=300)
+# sched.add_job(apis, 'interval', seconds=20)
 
 
 @ app.route("/clear")
@@ -287,19 +308,17 @@ def index():
     return app.send_static_file('index.html')
 
 
-# def job():
-#     app = create_app()
-with app.app_context():
-    # app.app_context().push()
-    # current_app.config["ENV"]
-    try:
-        sched.start()
-        print('pass')
-    except:
-        print('pass check')
-    # pass
-    print('check')
-# return app
+def job():
+    # app = Flask(__name__)
+    with app.app_context():
+        try:
+            sched.start()
+            print('pass')
+        except:
+            print('pass check')
+        # pass
+        print('check')
+    return app
 
 
 # job()
